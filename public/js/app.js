@@ -26,9 +26,27 @@ app.controller('MainController', function($scope, $http) {
 	// ------------------------------------------------------------------------
 
 	$scope.contacts = [];
+	$scope.obj = {};
 
 	$scope.reload = function() {
 		$scope.getContactList();
+		$scope.clearForm();
+	};
+
+	$scope.preFillContact = function(obj) {
+		$scope.obj = obj;
+	};
+
+	$scope.clearForm = function() {
+		$scope.obj = {};
+	};
+
+	$scope.createOrUpdateContact = function(obj) {
+		if (obj._id) {
+			$scope.updateContact(obj);
+		} else {
+			$scope.createContact(obj);
+		}
 	};
 
 	$scope.getContactList = function() {
@@ -63,10 +81,11 @@ app.controller('MainController', function($scope, $http) {
 			});
 	};
 
-	$scope.deleteContact = function(obj) {
+	$scope.updateContact = function(obj) {
 		$http({
 			url: '/api/v1/contacts/' + obj._id,
-			method: 'DELETE',
+			method: 'PUT',
+			data: obj,
 			headers: { 'Authorization': 'bearer ' + $scope.token }
 		})
 			.success(function(data, status, headers, config) {
@@ -74,6 +93,27 @@ app.controller('MainController', function($scope, $http) {
 				$scope.reload();
 			})
 			.error(function(data, status, headers, config) {
+				if (status == 401) {
+					$scope.token = null;
+				}
+			});
+	};
+
+	$scope.deleteContact = function(obj) {
+		if (!confirm('Really?')) {
+			return;
+		}
+
+		$http({
+			url: '/api/v1/contacts/' + obj._id,
+			method: 'DELETE',
+			headers: { 'Authorization': 'bearer ' + $scope.token }
+		})
+			.success(function (data, status, headers, config) {
+				console.log(JSON.stringify(data));
+				$scope.reload();
+			})
+			.error(function (data, status, headers, config) {
 				if (status == 401) {
 					$scope.token = null;
 				}

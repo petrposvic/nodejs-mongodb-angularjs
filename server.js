@@ -15,6 +15,7 @@ var secret = 'xxx';
 var timeout = 60000;
 
 var passport = require('passport'),
+	passportAuth = passport.authenticate('bearer', { session: false }),
 	BearerStrategy = require('passport-http-bearer').Strategy;
 
 passport.use(new BearerStrategy(
@@ -116,7 +117,6 @@ function login(req, res) {
 
 		user.token = jwt.encode(payload, secret, 'HS256');
 		user.validity = payload.validity;
-
 		user.save(function(err) {
 			if (err) res.send(err);
 
@@ -164,6 +164,22 @@ function getContact(req, res) {
 	});
 }
 
+function updateContact(req, res) {
+	Contact.findById(req.params.contact_id, function(err, contact) {
+		if (err) res.send(err);
+
+		contact.firstName = req.body.firstName;
+		contact.lastName = req.body.lastName;
+		contact.street = req.body.street;
+		contact.zipCode = req.body.zipCode;
+		contact.city = req.body.city;
+		contact.save(function(err) {
+			if (err) res.send(err);
+			res.json({ message: 'Contact updated!', obj: contact });
+		});
+	});
+}
+
 function deleteContact(req, res) {
 	Contact.remove({ _id: req.params.contact_id }, function(err, contact) {
 		if (err) res.send(err);
@@ -175,8 +191,6 @@ function deleteContact(req, res) {
 // Routes
 // ----------------------------------------------------------------------------
 
-var auth = passport.authenticate('bearer', { session: false });
-
 router.route('/setup')
 	.get(setup);
 
@@ -185,12 +199,13 @@ router
 	.post(login);
 
 router.route('/v1/contacts')
-	.post(auth, createContact)
-	.get(auth, getContactList);
+	.get(passportAuth, getContactList)
+	.post(passportAuth, createContact);
 
 router.route('/v1/contacts/:contact_id')
-	.get(auth, getContact)
-	.delete(auth, deleteContact);
+	.get(passportAuth, getContact)
+	.put(passportAuth, updateContact)
+	.delete(passportAuth, deleteContact);
 
 // ----------------------------------------------------------------------------
 
