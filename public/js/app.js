@@ -1,6 +1,17 @@
-var app = angular.module('app', ['ui.bootstrap']);
+var app = angular.module('app', ['ui.bootstrap', 'ngRoute']);
 
-app.controller('MainController', function($scope, $http) {
+app.config(function($routeProvider) {
+	$routeProvider
+		.when('/', {
+			templateUrl: 'templates/login.html'
+		})
+		.when('/contacts', {
+			templateUrl: 'templates/contacts.html',
+			controller: 'ContactController'
+		});
+});
+
+app.controller('MainController', function($scope, $http, $location) {
 	$scope.username = 'admin';
 	$scope.password = 'admin';
 	$scope.token = null;
@@ -12,49 +23,48 @@ app.controller('MainController', function($scope, $http) {
 				$scope.token = data.token;
 				console.log('token = ' + $scope.token);
 
-				$scope.reload();
+				$location.path('/contacts');
 			})
 			.error(function (data, status, headers, config) {
 				if (status == 401) {
 					$scope.token = null;
 				}
 			});
-	};
+	}
+});
 
-	// ------------------------------------------------------------------------
-	// Contacts
-	// ------------------------------------------------------------------------
+app.controller('ContactController', function($scope, $http) {
 
-	$scope.contacts = [];
-	$scope.obj = {};
+	$scope.items = [];
+	$scope.item = {};
 
 	$scope.reload = function() {
-		$scope.getContactList();
+		$scope.getList();
 		$scope.clearForm();
 	};
 
-	$scope.preFillContact = function(obj) {
-		$scope.obj = obj;
+	$scope.preFillForm = function(item) {
+		$scope.item = item;
 	};
 
 	$scope.clearForm = function() {
-		$scope.obj = {};
+		$scope.item = {};
 	};
 
-	$scope.createOrUpdateContact = function(obj) {
-		if (obj._id) {
-			$scope.updateContact(obj);
+	$scope.createOrUpdate = function(item) {
+		if (item._id) {
+			$scope.updateItem(item);
 		} else {
-			$scope.createContact(obj);
+			$scope.createItem(item);
 		}
 	};
 
-	$scope.getContactList = function() {
+	$scope.getList = function() {
 		$http
 			.get('/api/v1/contacts', {headers: {'Authorization': 'bearer ' + $scope.token}})
 			.success(function(data, status, headers, config) {
 				console.log(JSON.stringify(data));
-				$scope.contacts = data;
+				$scope.items = data;
 			})
 			.error(function(data, status, headers, config) {
 				if (status == 401) {
@@ -63,11 +73,11 @@ app.controller('MainController', function($scope, $http) {
 			});
 	};
 
-	$scope.createContact = function(obj) {
+	$scope.createItem = function(item) {
 		$http({
 			url: '/api/v1/contacts',
 			method: 'POST',
-			data: obj,
+			data: item,
 			headers: { 'Authorization': 'bearer ' + $scope.token }
 		})
 			.success(function(data, status, headers, config) {
@@ -81,11 +91,11 @@ app.controller('MainController', function($scope, $http) {
 			});
 	};
 
-	$scope.updateContact = function(obj) {
+	$scope.updateItem = function(item) {
 		$http({
-			url: '/api/v1/contacts/' + obj._id,
+			url: '/api/v1/contacts/' + item._id,
 			method: 'PUT',
-			data: obj,
+			data: item,
 			headers: { 'Authorization': 'bearer ' + $scope.token }
 		})
 			.success(function(data, status, headers, config) {
@@ -99,7 +109,7 @@ app.controller('MainController', function($scope, $http) {
 			});
 	};
 
-	$scope.deleteContact = function(obj) {
+	$scope.deleteItem = function(obj) {
 		if (!confirm('Really?')) {
 			return;
 		}
@@ -119,4 +129,6 @@ app.controller('MainController', function($scope, $http) {
 				}
 			});
 	};
+
+	$scope.reload();
 });

@@ -216,6 +216,7 @@ app.use(passport.initialize());
 app.use('/css', express.static('./public/css'));
 app.use('/img', express.static('./public/img'));
 app.use('/js', express.static('./public/js'));
+app.use('/', express.static('./public/'));
 app.use('/api', router);
 
 app.all('/*', function(req, res, next) {
